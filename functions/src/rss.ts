@@ -43,8 +43,6 @@ const fetchColumn = async (rssName: string, urlString: string) => {
     });
   }
 
-  const firstItem = items[0]
-  const postData = postToFireStoreData(firstItem);
   const itemsRef = admin
     .firestore()
     .collection("Rss")
@@ -56,23 +54,27 @@ const fetchColumn = async (rssName: string, urlString: string) => {
     .limit(1)
     .get()
     .catch((error: Error) => {
-      console.log("エラー　アイテム取得:　", error);
+      console.log("エラー アイテム取得: ", error);
     });
 
   const latestItem: any | null = querySnapShot ? querySnapShot.docs[0] : null
   const latestUrl = latestItem ? latestItem.data().url : "";
 
-  if (String(latestUrl) !== firstItem.link) {
-    await itemsRef
-      .add(postData)
-      .catch(error => {
-        console.log("エラー　Document書き込み:", error);
-      });
+  for (const i in items.reverse()){
+    const item = items[i];
+    if (String(latestUrl) !== item.link) {
+      const postData = postToFireStoreData(item);
+      await itemsRef
+        .add(postData)
+        .catch(error => {
+          console.log("エラー Document書き込み: ", error);
+        });
 
-    // Articlesにデータを追加
-    await addArticle(postData)
+      // Articlesにデータを追加
+      await addArticle(postData)
     
-    console.log("新着: " + postData.date + " " + postData.title + " - " + postData.url)
+      console.log("新着: " + postData)
+    }
   }
 };
 
