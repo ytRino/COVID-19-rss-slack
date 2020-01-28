@@ -86,7 +86,7 @@ const fetchColumn = async (rssName: string, urlString: string) => {
       // Articlesにデータを追加
       await addArticle(postData)
     
-      console.log("新着: " + item.isoDate || "--" + " " + item.title + " " + item.link)
+      console.log("新着: " + (item.isoDate || "--") + " " + item.title + " " + item.link)
 
       postToSlack(item.title + "\n" + item.link)
     }
