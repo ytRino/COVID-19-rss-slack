@@ -27,11 +27,23 @@ const postToFireStoreData = (parsedItem: rssParser.Item): {} => {
 };
 
 interface Article {
-  date: Date
+  date: Date,
+  url: string
 }
 
 const addArticle = async (articleData: {}) => {
   const itemsRef = admin.firestore().collection("Articles");
+
+  const found = await itemsRef
+    .where("url", "==", (articleData as Article).url)
+    .limit(1)
+    .get()
+    .catch((error: Error) => {
+      console.log("エラー アイテム検索 ", error)
+    });
+
+  console.log("@@@" + found || "nop")
+
   await itemsRef.add(articleData).catch((error) => {
     console.error("エラー Article書き込み：", error);
   })
