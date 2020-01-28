@@ -1,6 +1,7 @@
 import admin = require("firebase-admin");
 import rssParser = require("rss-parser");
-import * as slack from "./postToSlack";
+import { postToSlack } from "./postToSlack";
+import { keywords } from "./Constant/keywords";
 
 /**
  * パースしたアイテムをfirestoreで保存するデータに変換
@@ -44,8 +45,14 @@ const fetchColumn = async (rssName: string, urlString: string) => {
 
   if (feed && feed.items) {
     feed.items.forEach(item => {
-      items.push(item)
+      for(const k of keywords) {
+        if (item && item.contentSnippet && item.contentSnippet.includes(k)) {
+          items.push(item)
+        }
+      }
     });
+
+    console.log("Fetched: " + items.length + " of " + feed.items.length + " are matched.")
   }
 
   const itemsRef = admin
@@ -69,7 +76,7 @@ const fetchColumn = async (rssName: string, urlString: string) => {
     const item = items[i];
     const postData = postToFireStoreData(item);
     const latestDate = latestItem ? (latestItem.data() as Article).date : null;
-    if (latestDate == null || latestDate < (postData as Article).date) {
+    if (latestDate === null || latestDate < (postData as Article).date) {
       await itemsRef
         .add(postData)
         .catch(error => {
@@ -79,9 +86,9 @@ const fetchColumn = async (rssName: string, urlString: string) => {
       // Articlesにデータを追加
       await addArticle(postData)
     
-      console.log("新着: " + postData)
+      console.log("新着: " + item.isoDate || "--" + " " + item.title + " " + item.link)
 
-      slack.postToSlack(item.title + "\n" + item.link)
+      postToSlack(item.title + "\n" + item.link)
     }
   }
 };
