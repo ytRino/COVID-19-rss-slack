@@ -71,6 +71,8 @@ const fetchColumn = async (rssName: string, urlString: string) => {
 
     // Articlesにデータを追加
     await addArticle(postData)
+    
+    console.log("新着: " + postData.date + " " + postData.title + " - " + postData.url)
   }
 };
 

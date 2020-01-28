@@ -6,7 +6,7 @@ import * as rssItem from "./Constant/rssItem";
 admin.initializeApp();
 
 exports.fetchData = functions.pubsub
-    .schedule("every 12 hours")
+    .schedule("every 15 minutes")
     .onRun(async context => {
         await rss.fetchColumn(rssItem.nhk[0], rssItem.nhk[1]);
 
