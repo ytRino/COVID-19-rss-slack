@@ -1,5 +1,6 @@
 import admin = require("firebase-admin");
 import rssParser = require("rss-parser");
+import * as slack from "./postToSlack";
 
 /**
  * パースしたアイテムをfirestoreで保存するデータに変換
@@ -23,6 +24,10 @@ const postToFireStoreData = (parsedItem: rssParser.Item): {} => {
     category: parsedItem.categories || ""
   };
 };
+
+interface Article {
+  date: Date
+}
 
 const addArticle = async (articleData: {}) => {
   const itemsRef = admin.firestore().collection("Articles");
@@ -58,12 +63,13 @@ const fetchColumn = async (rssName: string, urlString: string) => {
     });
 
   const latestItem: any | null = querySnapShot ? querySnapShot.docs[0] : null
-  const latestUrl = latestItem ? latestItem.data().url : "";
+  //const latestUrl = latestItem ? latestItem.data().url : "";
 
   for (const i in items.reverse()){
     const item = items[i];
-    if (String(latestUrl) !== item.link) {
-      const postData = postToFireStoreData(item);
+    const postData = postToFireStoreData(item);
+    const latestDate = latestItem ? (latestItem.data() as Article).date : null;
+    if (latestDate == null || latestDate < (postData as Article).date) {
       await itemsRef
         .add(postData)
         .catch(error => {
@@ -74,6 +80,8 @@ const fetchColumn = async (rssName: string, urlString: string) => {
       await addArticle(postData)
     
       console.log("新着: " + postData)
+
+      slack.postToSlack(item.title + "\n" + item.link)
     }
   }
 };
