@@ -42,7 +42,8 @@ const addArticle = async (articleData: {}) => {
       console.log("エラー アイテム検索 ", error)
     });
 
-  console.log("@@@" + found || "nop")
+  //if (found.empty) skip
+  console.log("@@@" + (found ? found.constructor.name : "nop"))
 
   await itemsRef.add(articleData).catch((error) => {
     console.error("エラー Article書き込み：", error);
@@ -85,7 +86,7 @@ const fetchColumn = async (rssName: string, urlString: string) => {
   const latestDate = latestItem ? latestItem.data().date.toDate() : null;
 
   if (latestItem && latestDate) {
-    console.log(`${rssName}: latest date: ${latestDate.constructor.name} ${latestDate.toString()} ${latestItem.data().title}`)    
+    console.log(`${rssName}: latest date: ${latestDate.toString()} ${latestItem.data().title}`)    
   }
 
   for (const i in items.reverse()){
@@ -102,9 +103,10 @@ const fetchColumn = async (rssName: string, urlString: string) => {
       // Articlesにデータを追加
       await addArticle(postData)
     
-      console.log("新着: " + (item.isoDate || "--") + " " + item.title + " " + item.link)
+      console.log(`新着[${i}]: ${item.isoDate || "--"} ${item.title} ${item.link}`)
 
-      const formatDate = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes()}`
+      // Why UTC+9 does not included even though firebase shows it with UTC+9?
+      const formatDate = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours() + 9}:${date.getMinutes()}`
       postToSlack(`(${formatDate}) ${item.title}\n${item.link}`)
     } else {
       // console.log(`  Article ${item.title} was not added.`)
