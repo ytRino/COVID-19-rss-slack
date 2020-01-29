@@ -81,14 +81,18 @@ const fetchColumn = async (rssName: string, urlString: string) => {
       console.log("エラー アイテム取得: ", error);
     });
 
-  const latestItem: any | null = querySnapShot ? querySnapShot.docs[0] : null
-  //const latestUrl = latestItem ? latestItem.data().url : "";
+  const latestItem = querySnapShot ? querySnapShot.docs[0] : null
+  const latestDate = latestItem ? latestItem.data().date.toDate() : null;
+
+  if (latestItem && latestDate) {
+    console.log(`${rssName}: latest date: ${latestDate.constructor.name} ${latestDate.toString()} ${latestItem.data().title}`)    
+  }
 
   for (const i in items.reverse()){
     const item = items[i];
     const postData = postToFireStoreData(item);
-    const latestDate = latestItem ? (latestItem.data() as Article).date : null;
-    if (latestDate === null || latestDate < (postData as Article).date) {
+    const date = (postData as Article).date
+    if (latestDate === null || latestDate.getTime() < date.getTime()) {
       await itemsRef
         .add(postData)
         .catch(error => {
@@ -100,7 +104,10 @@ const fetchColumn = async (rssName: string, urlString: string) => {
     
       console.log("新着: " + (item.isoDate || "--") + " " + item.title + " " + item.link)
 
-      postToSlack(item.title + "\n" + item.link)
+      const formatDate = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes()}`
+      postToSlack(`(${formatDate}) ${item.title}\n${item.link}`)
+    } else {
+      // console.log(`  Article ${item.title} was not added.`)
     }
   }
 };
