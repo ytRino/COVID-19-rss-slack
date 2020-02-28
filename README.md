@@ -5,5 +5,5 @@ RSSフィードを巡回して新型コロナウイルスCOVID-19関連のニュ
 
 - Cloud functions
 - Cloud schedulers
-- Fibase Firestore
+- Firestore
 - Slack webhook
