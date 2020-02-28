@@ -47,7 +47,7 @@ const addArticle = async (articleData: Article) => {
     });
 
   if (found && !found.empty && found.docs[0].data().summary == articleData.summary) {
-    console.log(`No update for ${articleData.title} ${articleData.url}`)
+    // console.log(`Skip: already added ${articleData.title} ${articleData.url}`)
     return false
   }
   //console.log("@@@" + (found ? found.constructor.name : "nop"))
@@ -64,23 +64,18 @@ const fetchColumn = async (rssName: string, urlString: string) => {
   const parser = new rssParser();
   const feed = await parser.parseURL(urlString);
 
-  var listLog = ""
   // キーワードを含むエントリを絞り込む
   if (feed && feed.items) {
     feed.items.forEach(item => {
-      listLog += `entry: ${item.title}`
       for(const k of keywords) {
         if (item && item.contentSnippet && item.contentSnippet.includes(k)) {
           items.push(item)
-          listLog += ` [matched]`
           break
         }
       }
-      listLog += `\n`
     });
 
-    console.log("Fetched: " + items.length + " of " + feed.items.length + " are matched.")
-    console.log(listLog)
+    console.log(`${rssName}: Fetched: ${items.length} of ${feed.items.length} are matched.`)
   }
 
   const itemsRef = admin
@@ -101,7 +96,7 @@ const fetchColumn = async (rssName: string, urlString: string) => {
   const latestDate = latestItem ? latestItem.data().date.toDate() : null;
 
   if (latestItem && latestDate) {
-    console.log(`${rssName}: latest date: ${latestDate.toString()} ${latestItem.data().title}`)
+    console.log(`${rssName}: latest saved item date: ${latestDate.toString()} ${latestItem.data().title}`)
   }
 
   var composedLog = ""
@@ -117,17 +112,22 @@ const fetchColumn = async (rssName: string, urlString: string) => {
           console.log("エラー Document書き込み: ", error);
         });
 
-      composedLog += `${i}: add: ${item.title}\n`
       // Articlesにデータを追加
       var added = await addArticle(postData)
 
-      console.log(`新着[${i}]: ${item.isoDate || "--"} ${item.title} ${item.link}, added:${added}`)
-
-      // Why UTC+9 does not included even though firebase shows it with UTC+9?
-      const formatDate = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours() + 9}:${date.getMinutes()}`
-      postToSlack(`(${formatDate}) ${item.title}\n${item.link}`)
+      // 複数フィードで同じ投稿がある場合は投稿しない
+      // 新しく追加したフィードなどで新着が多すぎ場合は投稿しない
+      if (added && (parseInt(i) > items.length - 5)) {
+        composedLog += `${i}: ${item.title} was added.\n`
+        console.log(`新着[${i}]: ${item.isoDate || "--"} ${item.title} ${item.link}, added:${added}`)
+        // Why UTC+9 does not included even though firebase shows it with UTC+9?
+        const formatDate = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours() + 9}:${date.getMinutes()}`
+        postToSlack(`(${formatDate}) ${item.title}\n${item.link}`)
+      } else {
+        composedLog += `${i}: ${item.title} was added but not posted to slack.\n`
+      }
     } else {
-      composedLog += `${i}: Article ${item.title} was not added.\n`
+      composedLog += `${i}: ${item.title} was not added.\n`
     }
   }
   console.log(composedLog)
