@@ -1,6 +1,6 @@
 import admin = require("firebase-admin");
 import rssParser = require("rss-parser");
-import { postToSlack } from "./postToSlack";
+//import { postToSlack } from "./postToSlack";
 import { keywords } from "./Constant/keywords";
 
 /**
@@ -121,8 +121,8 @@ const fetchColumn = async (rssName: string, urlString: string) => {
         composedLog += `${i}: ${item.title} was added.\n`
         console.log(`新着[${i}]: ${item.isoDate || "--"} ${item.title} ${item.link}, added:${added}`)
         // Why UTC+9 does not included even though firebase shows it with UTC+9?
-        const formatDate = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours() + 9}:${date.getMinutes()}`
-        postToSlack(`(${formatDate}) ${item.title}\n${item.link}`)
+        // const formatDate = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours() + 9}:${date.getMinutes()}`
+        // postToSlack(`(${formatDate}) ${item.title}\n${item.link}`)
       } else {
         composedLog += `${i}: ${item.title} was added but not posted to slack.\n`
       }

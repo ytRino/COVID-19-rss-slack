@@ -1,7 +1,7 @@
 const keywords: string[] = [
   "肺炎",
   "ウイルス",
-  "WHO"
+  "感染"
 ];
 
 export {
